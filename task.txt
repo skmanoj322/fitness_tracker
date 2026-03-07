@@ -1,0 +1,12 @@
+TASKS
+=====
+
+Name: manoj
+
+[x] Build pool connection
+[x] Integrate DB
+[ ] Complete auth API
+      - Validate Telegram bot init data
+      - Check if user exists in DB (insert if not)
+      - Generate JWT token
+      - Return token in response body
