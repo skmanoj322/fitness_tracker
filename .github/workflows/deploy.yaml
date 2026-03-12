@@ -40,7 +40,7 @@ jobs:
           rm /tmp/debug_key
 
       - name: Copy binary to VM
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
@@ -52,7 +52,7 @@ jobs:
           fingerprint: ${{ secrets.GCP_HOST_FINGERPRINT }}
 
       - name: Create .env on VM
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
@@ -66,7 +66,7 @@ jobs:
             EOF
 
       - name: Restart service
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
