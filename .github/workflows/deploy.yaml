@@ -45,7 +45,18 @@ jobs:
           target: /home/manojsk/
           debug: true
 
-      - name: Run migrations # ← add here
+      - name: Install sqlx-cli
+        uses: actions/cache@v4
+        id: cache-sqlx
+        with:
+          path: ~/.cargo/bin/cargo-sqlx
+          key: sqlx-cli-0.8.6
+
+      - name: Install sqlx-cli if not cached
+        if: steps.cache-sqlx.outputs.cache-hit != 'true'
+        run: cargo install sqlx-cli --no-default-features --features postgres,rustls
+
+      - name: Run migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: cargo sqlx migrate run
