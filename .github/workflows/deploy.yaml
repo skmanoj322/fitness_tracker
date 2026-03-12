@@ -16,7 +16,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-gnu
+          targets: x86_64-unknown-linux-musl
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -27,10 +27,13 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-v2
 
+      - name: Install musl tools
+        run: sudo apt-get install -y musl-tools
+
       - name: Build release binary
         env:
           SQLX_OFFLINE: true
-        run: cargo build --release --target x86_64-unknown-linux-gnu
+        run: cargo build --release --target x86_64-unknown-linux-musl
 
       - name: Copy binary to VM
         uses: appleboy/scp-action@v1
@@ -38,7 +41,7 @@ jobs:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          source: target/x86_64-unknown-linux-gnu/release/telegram_bot
+          source: target/x86_64-unknown-linux-musl/release/telegram_bot
           target: /home/manojsk/
           debug: true
 
@@ -64,7 +67,7 @@ jobs:
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           debug: true
           script: |
-            mv /home/manojsk/target/x86_64-unknown-linux-gnu/release/telegram_bot /home/manojsk/telegram_bot
+            mv /home/manojsk/target/x86_64-unknown-linux-musl/release/telegram_bot /home/manojsk/telegram_bot
             chmod +x /home/manojsk/telegram_bot
             sudo systemctl restart telegram_bot
             sudo systemctl status telegram_bot
