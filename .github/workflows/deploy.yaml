@@ -32,51 +32,6 @@ jobs:
           SQLX_OFFLINE: true
         run: cargo build --release --target x86_64-unknown-linux-gnu
 
-      - name: Debug SSH key fingerprint
-        run: |
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > /tmp/debug_key
-          chmod 600 /tmp/debug_key
-          ssh-keygen -l -f /tmp/debug_key
-          rm /tmp/debug_key
-
-      - name: Debug host fingerprint
-        run: |
-          echo "Checking host fingerprint from runner"
-          ssh-keyscan -t ed25519 ${{ secrets.GCP_VM_IP }} | ssh-keygen -lf -
-
-      - name: Validate username and host
-        run: |
-          USERNAME='${{ secrets.GCP_VM_USER }}'
-          HOST='${{ secrets.GCP_VM_IP }}'
-
-          echo "Username length: $(printf "%s" "$USERNAME" | wc -c)"
-          echo "Host length: $(printf "%s" "$HOST" | wc -c)"
-
-          case "$USERNAME" in
-            *$'\n'* ) echo "Username contains newline"; exit 1 ;;
-            *" "*) echo "Username contains spaces"; exit 1 ;;
-            "") echo "Username is empty"; exit 1 ;;
-            *) echo "Username format OK" ;;
-          esac
-
-          case "$HOST" in
-            *$'\n'* ) echo "Host contains newline"; exit 1 ;;
-            "") echo "Host is empty"; exit 1 ;;
-            *) echo "Host format OK" ;;
-          esac
-
-      - name: Compare host fingerprint
-        run: |
-          EXPECTED='${{ secrets.GCP_HOST_FINGERPRINT }}'
-          ACTUAL=$(ssh-keyscan -t ed25519 ${{ secrets.GCP_VM_IP }} 2>/dev/null | ssh-keygen -lf - | awk '{print $2}')
-
-          if [ "$EXPECTED" = "$ACTUAL" ]; then
-            echo "MATCH"
-          else
-            echo "MISMATCH"
-            exit 1
-          fi
-
       - name: Copy binary to VM
         uses: appleboy/scp-action@v1
         with:
