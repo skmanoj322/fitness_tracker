@@ -15,6 +15,8 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -36,7 +38,7 @@ jobs:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          source: target/x86_64-unknown-linux-gnu/release/workout-tracker
+          source: target/x86_64-unknown-linux-gnu/release/telegram_bot
           target: /home/manojsk/
 
       - name: Create .env on VM
@@ -59,7 +61,7 @@ jobs:
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           script: |
-            mv /home/manojsk/target/x86_64-unknown-linux-gnu/release/workout-tracker /home/manojsk/workout-tracker
-            chmod +x /home/manojsk/workout-tracker
-            sudo systemctl restart workout-tracker
-            sudo systemctl status workout-tracker
+            mv /home/manojsk/target/x86_64-unknown-linux-gnu/release/telegram_bot /home/manojsk/telegram_bot
+            chmod +x /home/manojsk/telegram_bot
+            sudo systemctl restart telegram_bot
+            sudo systemctl status telegram_bot
