@@ -45,6 +45,11 @@ jobs:
           target: /home/manojsk/
           debug: true
 
+      - name: Run migrations # ← add here
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: cargo sqlx migrate run
+
       - name: Create .env on VM
         uses: appleboy/ssh-action@v1
         with:
