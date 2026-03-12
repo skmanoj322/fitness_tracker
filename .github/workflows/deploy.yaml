@@ -1,0 +1,63 @@
+name: Deploy Workout Tracker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Copy binary to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          source: target/x86_64-unknown-linux-gnu/release/workout-tracker
+          target: /home/manojsk/
+
+      - name: Create .env on VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            cat > /home/manojsk/.env << 'EOF'
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
+
+      - name: Restart service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_VM_IP }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            mv /home/manojsk/target/x86_64-unknown-linux-gnu/release/workout-tracker /home/manojsk/workout-tracker
+            chmod +x /home/manojsk/workout-tracker
+            sudo systemctl restart workout-tracker
+            sudo systemctl status workout-tracker
