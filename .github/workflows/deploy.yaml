@@ -26,6 +26,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build release binary
+        env:
+          SQLX_OFFLINE: true
         run: cargo build --release --target x86_64-unknown-linux-gnu
 
       - name: Copy binary to VM
