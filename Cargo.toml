@@ -17,9 +17,10 @@ tower-http = { version = "0.5", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2.5.8"
-time = { version = "0.3", features = ["serde"] }
+time = { version = "0.3", features = ["serde","serde-well-known"] }
 jsonwebtoken = { version = "10", features = ["use_pem", "rust_crypto"] }
 rustls = { version = "0.23", features = ["ring"] }
 serde_urlencoded="0.7"
 bigdecimal = { version = "0.4", features = ["serde"] }
 urlencoding="2"
+reqwest = { version = "0.12", features = ["json"] }

@@ -17,3 +17,7 @@ pub struct User {
     pub last_name: Option<String>,
     pub user_name: Option<String>,
 }
+
+pub struct send_message {
+    text: String,
+}
