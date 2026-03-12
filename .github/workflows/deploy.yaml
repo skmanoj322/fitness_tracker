@@ -39,6 +39,11 @@ jobs:
           ssh-keygen -l -f /tmp/debug_key
           rm /tmp/debug_key
 
+      - name: Debug host fingerprint
+        run: |
+          echo "Checking host fingerprint from runner"
+          ssh-keyscan -t ed25519 ${{ secrets.GCP_VM_IP }} | ssh-keygen -lf -
+
       - name: Copy binary to VM
         uses: appleboy/scp-action@v1
         with:
