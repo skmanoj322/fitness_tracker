@@ -44,6 +44,18 @@ jobs:
           echo "Checking host fingerprint from runner"
           ssh-keyscan -t ed25519 ${{ secrets.GCP_VM_IP }} | ssh-keygen -lf -
 
+      - name: Compare host fingerprint
+        run: |
+          EXPECTED='${{ secrets.GCP_HOST_FINGERPRINT }}'
+          ACTUAL=$(ssh-keyscan -t ed25519 ${{ secrets.GCP_VM_IP }} 2>/dev/null | ssh-keygen -lf - | awk '{print $2}')
+
+          if [ "$EXPECTED" = "$ACTUAL" ]; then
+            echo "MATCH"
+          else
+            echo "MISMATCH"
+            exit 1
+          fi
+
       - name: Copy binary to VM
         uses: appleboy/scp-action@v1
         with:
