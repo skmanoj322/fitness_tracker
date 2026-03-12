@@ -40,6 +40,7 @@ jobs:
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           source: target/x86_64-unknown-linux-gnu/release/telegram_bot
           target: /home/manojsk/
+          debug: true
 
       - name: Create .env on VM
         uses: appleboy/ssh-action@v1.0.3
@@ -47,6 +48,7 @@ jobs:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          debug: true
           script: |
             cat > /home/manojsk/.env << 'EOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -60,6 +62,7 @@ jobs:
           host: ${{ secrets.GCP_VM_IP }}
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          debug: true
           script: |
             mv /home/manojsk/target/x86_64-unknown-linux-gnu/release/telegram_bot /home/manojsk/telegram_bot
             chmod +x /home/manojsk/telegram_bot
