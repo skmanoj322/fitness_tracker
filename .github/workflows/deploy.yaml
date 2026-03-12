@@ -86,8 +86,6 @@ jobs:
           source: target/x86_64-unknown-linux-gnu/release/telegram_bot
           target: /home/manojsk/
           debug: true
-          use_insecure_cipher: false
-          fingerprint: ${{ secrets.GCP_HOST_FINGERPRINT }}
 
       - name: Create .env on VM
         uses: appleboy/ssh-action@v1
