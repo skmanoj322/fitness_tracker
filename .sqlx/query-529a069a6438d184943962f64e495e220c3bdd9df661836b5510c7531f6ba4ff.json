@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select * from users where telegram_id=$1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "telegram_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "phone_number",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "first_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "last_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "user_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "529a069a6438d184943962f64e495e220c3bdd9df661836b5510c7531f6ba4ff"
+}

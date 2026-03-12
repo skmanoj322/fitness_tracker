@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "Select * from exercise_tracker where user_id=$1 and id=$2 ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "weight_kg",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "set",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "rep",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "completed_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "4117b4afd3cb26665567e71f710f93e8232eb3ca93b9f80bc2af4f6121283757"
+}

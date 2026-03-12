@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO exercise_tracker (user_id, name, weight_kg, \"set\", rep) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "weight_kg",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "set",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "rep",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "completed_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Numeric",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "10aa83b9b2500c58b979bbedc0bfef061ec07d1ea11c18d27db5721dfd4963e3"
+}

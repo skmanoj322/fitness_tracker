@@ -1,0 +1,63 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update exercise_tracker set name=$1, weight_kg=$2,\"set\"=$3,rep=$4 where id=$5 and user_id=$6 RETURNING *",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "weight_kg",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 4,
+        "name": "set",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "rep",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "completed_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Numeric",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "5602f7ef2538cd1da5e357b330a2293df514b6b8e1d327be45409d1e9d378551"
+}
