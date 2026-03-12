@@ -32,6 +32,13 @@ jobs:
           SQLX_OFFLINE: true
         run: cargo build --release --target x86_64-unknown-linux-gnu
 
+      - name: Debug SSH key fingerprint
+        run: |
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > /tmp/debug_key
+          chmod 600 /tmp/debug_key
+          ssh-keygen -l -f /tmp/debug_key
+          rm /tmp/debug_key
+
       - name: Copy binary to VM
         uses: appleboy/scp-action@v0.1.7
         with:
