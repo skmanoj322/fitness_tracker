@@ -1,37 +1,13 @@
-use axum::{
-    Json, Router,
-    http::{Method, StatusCode},
-    routing::{get, post},
-};
-use serde::Deserialize;
+use axum::{Router, http::Method, routing::get};
 // use sqlx::{PgPool, Pool};
 
-use sqlx::{Acquire, PgPool, Pool, pool};
+use sqlx::PgPool;
 use tower_http::cors::{Any, CorsLayer}; // Add this import
 
-use telegram_bot::router::{self, user_workout_log};
+use telegram_bot::router::user_workout_log;
 
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-#[derive(Debug, Deserialize)]
-pub struct Update {
-    update_id: i64,
-    message: Option<Message>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Message {
-    chat: Chat,
-    text: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Chat {
-    id: i64,
-    first_name: String,
-    last_name: String,
-}
 
 #[tokio::main]
 async fn main() {
@@ -60,26 +36,10 @@ async fn main() {
     let app = Router::new()
         .merge(user_workout_log())
         .route("/get", get(|| async { "Helloworld" }))
-        .route("/telegram/webhook", post(telegram_handler))
         .with_state(pool)
         .layer(TraceLayer::new_for_http())
         .layer(cors);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
-}
-
-pub async fn telegram_handler(Json(update): Json<Update>) -> StatusCode {
-    println!("{:?}", update);
-    if let Some(message) = update.message {
-        if let Some(text) = message.text {
-            if text.to_lowercase() == "ping" {
-                println!("Pong");
-
-                println!("{:?}", message.chat);
-            }
-        }
-    }
-
-    StatusCode::OK
 }

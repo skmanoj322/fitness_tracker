@@ -1,18 +1,21 @@
 use std::collections::HashMap;
+use std::io::Error;
 
 use crate::models::{DeleteLog, EditExerciseLog, ExerciseLog, NewExerciseLog};
 use crate::router::auth_handler;
 use crate::utils::auth_midleware;
+use axum::Json;
 use axum::extract::Extension;
 use axum::extract::{Query, Request, State};
 use axum::middleware::from_fn;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use axum::{Error, Json};
 use axum::{Router, routing::post};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{PgPool, Pool, Postgres, query_as};
+use time::Date;
 
 pub fn user_workout_log() -> Router<PgPool> {
     Router::new()
@@ -25,6 +28,7 @@ pub fn user_workout_log() -> Router<PgPool> {
         .route("/sendMessage", get(sendmessage))
         .layer(from_fn(auth_midleware))
         .route("/auth/telegram", post(auth_handler))
+        .route("/webhook", post(telegram_handler))
 }
 
 #[derive(Serialize)]
@@ -35,6 +39,24 @@ struct MyResponse {
 struct Params {
     id: Option<i32>,
 }
+#[derive(Debug, Deserialize)]
+pub struct Update {
+    update_id: i64,
+    message: Option<Message>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Message {
+    chat: Chat,
+    text: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Chat {
+    id: i64,
+    first_name: Option<String>,
+    last_name: Option<String>,
+}
 async fn handler() -> impl IntoResponse {
     let response = MyResponse {
         hello: "world".to_string(),
@@ -42,6 +64,29 @@ async fn handler() -> impl IntoResponse {
     Json(response)
 }
 
+#[derive(Deserialize)]
+struct DateParams {
+    date: Option<String>, // String, not str
+}
+
+pub async fn telegram_handler(
+    State(state): State<PgPool>,
+    Json(update): Json<Update>,
+) -> StatusCode {
+    if let Some(message) = update.message {
+        if let Some(text) = message.text {
+            let chat_id = message.chat.id;
+            println!("PONGhhh{:?}", chat_id);
+            if text.starts_with("/session") {
+                let date = text.trim_start_matches("/session").trim().to_string();
+                let date = if date.is_empty() { None } else { Some(date) };
+                send_workout_message(&state, chat_id, date).await;
+            }
+        }
+    }
+
+    StatusCode::OK
+}
 async fn get_data(
     State(state): State<PgPool>,
     Query(params): Query<Params>,
@@ -173,33 +218,24 @@ async fn delete_logs(
     return Json(json!({"stautus":201,"data":delete_log})).into_response();
 }
 
-#[derive(Deserialize)]
-struct DateParams {
-    date: Option<String>,
-}
-
 async fn get_session_logs(
     State(state): State<PgPool>,
-    Query(params): Query<DateParams>,
     Extension(user_id): Extension<String>,
 ) -> Response {
     let user_id = get_user_id(user_id, &state).await;
 
-    let date = if let Some(d) = params.date {
-        match time::Date::parse(&d, &time::format_description::well_known::Iso8601::DATE) {
-            Ok(parsed) => parsed,
-            Err(_) => return Json(json!({"status": 400, "error": "Invalid date format. Use YYYY-MM-DD"})).into_response(),
-        }
-    } else {
-        time::OffsetDateTime::now_utc().date()
-    };
+    let todays_log = session_query(&state, user_id, None).await;
 
-    let logs = session_query(&state, user_id, date).await;
-
-    return Json(json!({"status":201,"data":logs})).into_response();
+    return Json(json!({"status":201,"data":todays_log})).into_response();
 }
 
-async fn session_query(state: &Pool<Postgres>, user_id: i32, date: time::Date) -> Vec<ExerciseLog> {
+async fn session_query(
+    state: &Pool<Postgres>,
+    user_id: i32,
+    date: Option<Date>,
+) -> Vec<ExerciseLog> {
+    let date = date.unwrap_or_else(|| time::OffsetDateTime::now_utc().date());
+
     let todays_log = sqlx::query_as!(
         ExerciseLog,
         r#"
@@ -221,8 +257,16 @@ async fn session_query(state: &Pool<Postgres>, user_id: i32, date: time::Date) -
 async fn sendmessage(
     State(state): State<PgPool>,
     Extension(user_id): Extension<String>,
+    Query(params): Query<DateParams>,
 ) -> Response {
     let client = reqwest::Client::new();
+
+    let token = std::env::var("BOT_TOKEN").expect(
+        "TELEGRAM_BOT_TOKEN not
+     set",
+    );
+
+    let url = format!("https://api.telegram.org/bot{}/sendMessage", token);
 
     let telegram_id: i64 = serde_json::from_str::<serde_json::Value>(&user_id)
         .unwrap()
@@ -232,7 +276,19 @@ async fn sendmessage(
 
     let user_id_num = get_user_id(user_id, &state).await;
 
-    let session_log = session_query(&state, user_id_num, time::OffsetDateTime::now_utc().date()).await;
+    let date = if let Some(d) = params.date {
+        match time::Date::parse(&d, &time::format_description::well_known::Iso8601::DATE) {
+            Ok(parsed) => parsed,
+            Err(_) => {
+                return Json(json!({"status": 400, "error": "Invaliddate format. Use YYYY-MM-DD"}))
+                    .into_response();
+            }
+        }
+    } else {
+        time::OffsetDateTime::now_utc().date()
+    };
+
+    let session_log = session_query(&state, user_id_num, Some(date)).await;
 
     let mut exercise_volumes: HashMap<String, f64> = HashMap::new();
 
@@ -290,11 +346,104 @@ async fn sendmessage(
         "{}\n\n📊 Exercise Volume:\n{}\n\n💪 Total Session Volume: {}kg",
         set_lines, exercise_summary, total_session_volume
     );
-    let res=client.post("https://api.telegram.org/bot8421573811:AAFJ5rCurcQtogGi6x1xK3rRAZx5eZMx3UY/sendMessage").json(&serde_json::json!({
-        "chat_id":telegram_id,
-        "text":text
-    })).send().await.unwrap().json::<serde_json::Value>().await.unwrap();
+    let res = client
+        .post(url)
+        .json(&serde_json::json!({
+            "chat_id":telegram_id,
+            "text":text
+        }))
+        .send()
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     // just analysis this what we done here
 
     return Json(json!({"status":201,"data":res})).into_response();
+}
+
+pub async fn send_workout_message(state: &PgPool, telegram_id: i64, date: Option<String>) {
+    let client = reqwest::Client::new();
+
+    let user_id_num = sqlx::query!("SELECT id FROM users WHERE telegram_id = $1", telegram_id)
+        .fetch_one(state)
+        .await
+        .unwrap()
+        .id;
+
+    let date = if let Some(d) = date {
+        let format = time::format_description::parse("[year]-[month]-[day]").unwrap();
+        match time::Date::parse(&d, &format) {
+            Ok(parsed) => parsed,
+            Err(_) => return,
+        }
+    } else {
+        time::OffsetDateTime::now_utc().date()
+    };
+
+    let session_log = session_query(&state, user_id_num, Some(date)).await;
+
+    let mut exercise_volumes: HashMap<String, f64> = HashMap::new();
+
+    for log in &session_log {
+        let name = log.name.as_deref().unwrap_or("unknown").to_string();
+
+        let rep = log.rep.unwrap().to_string();
+
+        let weight = log
+            .weight_kg
+            .as_ref()
+            .and_then(|w| w.to_string().parse::<f64>().ok())
+            .unwrap_or(0.0);
+
+        let reps = log.rep.unwrap_or(0) as f64;
+        *exercise_volumes.entry(name).or_insert(0.0) += weight * reps;
+    }
+
+    let total_session_volume: f64 = exercise_volumes.values().sum();
+
+    let set_lines = session_log
+        .iter()
+        .enumerate()
+        .map(|(i, log)| {
+            let weight = log
+                .weight_kg
+                .as_ref()
+                .and_then(|w| w.to_string().parse::<f64>().ok())
+                .unwrap_or(0.0);
+            let reps = log.rep.unwrap_or(0) as f64;
+            let vol = weight * reps;
+
+            format!(
+                "{}. {} | {}kg | set:{} | rep:{} | vol:{}kg",
+                i + 1,
+                log.name.as_deref().unwrap_or("Unknown"),
+                log.weight_kg
+                    .as_ref()
+                    .map(|w| w.to_string())
+                    .unwrap_or_default(),
+                log.set.unwrap_or(0),
+                log.rep.unwrap_or(0),
+                vol,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let exercise_summary = exercise_volumes
+        .iter()
+        .map(|(name, vol)| format!("{}: {}kg", name, vol))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let text = format!(
+        "{}\n\n{}\n\n📊 Exercise Volume:\n{}\n\n💪 Total Session Volume: {}kg",
+        date, set_lines, exercise_summary, total_session_volume
+    );
+    client.post("https://api.telegram.org/bot8421573811:AAFJ5rCurcQtogGi6x1xK3rRAZx5eZMx3UY/sendMessage").json(&serde_json::json!({
+         "chat_id":telegram_id,
+         "text":text
+     })).send().await.unwrap().json::<serde_json::Value>().await.unwrap();
+
+    return ();
 }
