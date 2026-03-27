@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id,user_id, name, weight_kg, \"set\", rep, completed_at\n        FROM exercise_tracker\n        WHERE user_id = $1\n          AND completed_at::date = CURRENT_DATE\n        ",
+  "query": "\n        SELECT id,user_id, name, weight_kg, \"set\", rep, completed_at\n        FROM exercise_tracker\n        WHERE user_id = $1\n          AND completed_at::date = $2\n        ",
   "describe": {
     "columns": [
       {
@@ -41,7 +41,8 @@
     ],
     "parameters": {
       "Left": [
-        "Int4"
+        "Int4",
+        "Date"
       ]
     },
     "nullable": [
@@ -54,5 +55,5 @@
       true
     ]
   },
-  "hash": "5d432b408a402db0e7f5da541b8ac673ce5d25ddec841df4f57adc958bce2faa"
+  "hash": "ea5a2b796b1b2bd647220603dd9397890b9e021d30dbe20e0d3661b15b744b81"
 }

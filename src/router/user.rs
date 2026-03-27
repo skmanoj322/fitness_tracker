@@ -245,7 +245,7 @@ async fn session_query(
           AND completed_at::date = $2
         "#,
         user_id,
-        date
+        date as time::Date
     )
     .fetch_all(state)
     .await
