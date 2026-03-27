@@ -173,27 +173,43 @@ async fn delete_logs(
     return Json(json!({"stautus":201,"data":delete_log})).into_response();
 }
 
+#[derive(Deserialize)]
+struct DateParams {
+    date: Option<String>,
+}
+
 async fn get_session_logs(
     State(state): State<PgPool>,
+    Query(params): Query<DateParams>,
     Extension(user_id): Extension<String>,
 ) -> Response {
     let user_id = get_user_id(user_id, &state).await;
 
-    let todays_log = session_query(&state, user_id).await;
+    let date = if let Some(d) = params.date {
+        match time::Date::parse(&d, &time::format_description::well_known::Iso8601::DATE) {
+            Ok(parsed) => parsed,
+            Err(_) => return Json(json!({"status": 400, "error": "Invalid date format. Use YYYY-MM-DD"})).into_response(),
+        }
+    } else {
+        time::OffsetDateTime::now_utc().date()
+    };
 
-    return Json(json!({"status":201,"data":todays_log})).into_response();
+    let logs = session_query(&state, user_id, date).await;
+
+    return Json(json!({"status":201,"data":logs})).into_response();
 }
 
-async fn session_query(state: &Pool<Postgres>, user_id: i32) -> Vec<ExerciseLog> {
+async fn session_query(state: &Pool<Postgres>, user_id: i32, date: time::Date) -> Vec<ExerciseLog> {
     let todays_log = sqlx::query_as!(
         ExerciseLog,
         r#"
         SELECT id,user_id, name, weight_kg, "set", rep, completed_at
         FROM exercise_tracker
         WHERE user_id = $1
-          AND completed_at::date = CURRENT_DATE
+          AND completed_at::date = $2
         "#,
-        user_id
+        user_id,
+        date
     )
     .fetch_all(state)
     .await
@@ -216,7 +232,7 @@ async fn sendmessage(
 
     let user_id_num = get_user_id(user_id, &state).await;
 
-    let session_log = session_query(&state, user_id_num).await;
+    let session_log = session_query(&state, user_id_num, time::OffsetDateTime::now_utc().date()).await;
 
     let mut exercise_volumes: HashMap<String, f64> = HashMap::new();
 
